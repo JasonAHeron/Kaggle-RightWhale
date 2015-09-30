@@ -167,60 +167,44 @@ def blur_color(im):
 def crop(source, target):
 	imlist = get_imlist(source)
 
+	kernel_size = 3
+	scale = 1
+	delta = 0
+	ddepth = cv2.CV_16S
+
 	for ii in xrange(25,30):
 		impath = imlist[ii]
 		filename = impath.split('/')[-1]
 		print "Process file %s" % filename
 
-		im = array(Image.open(impath))
-		c = most_frequent_colour(Image.open(impath))
-		c = array(c)
-		# im2 = np.power(im-c, 2)
-		# im2 = np.zeros(im.shape)
-		# for i in xrange(im.shape[0]):
-		# 	for j in xrange(im.shape[1]):
-		# 		for k in xrange(im.shape[2]):
-		# 			im2[i,j,k] = im[i,j,k]-c[k]
-		im2 = im
-		binary_image = np.where(im > np.mean(im), 1.0, 0.0)
-		im3 = filters.gaussian_filter(binary_image, 3)
-		display_im(filename, [im, im, binary_image, im3], 2, 2)
-		continue
+		im = cv2.imread(impath)
 
-		# im_gray = array(Image.open(impath).convert('L'))
-		im = filters.gaussian_filter(im, 3)
-		im = histeq(im)
+		im2 = cv2.GaussianBlur(im,(3,3),0)
+		im2 = cv2.resize(im2, (300, 300))
+		hsv = cv2.cvtColor(im2, cv2.COLOR_BGR2HSV)
+		# loop over the boundaries
+		# create NumPy arrays from the boundaries
+		lower = np.array([340, 1.18, 80])
+		upper = np.array([340, 1.18, 100])
 
-		im_gray = array(Image.fromarray(np.uint8(im)).convert('L'))
-		im_gray = filters.gaussian_filter(im_gray, 3)
+		# find the colors within the specified boundaries and apply
+		# the mask
+		mask = cv2.inRange(hsv, lower, upper)
+		output = cv2.bitwise_and(im2, im2, mask=mask)
 
-		im2 = 255 - im_gray # invert image
-		im3 = (100.0/ 255) * im_gray # clamp to interval 100... 200
-		im4 = 255.0 * (im_gray/ 255.0)** 2 # squared
+		# show the images
+		cv2.imshow("images", np.hstack([im2, output]))
+		cv2.waitKey(0)
+		# gray = cv2.cvtColor(im, cv2.COLOR_BGR2GRAY)
+		# gray = cv2.equalizeHist(gray)
 
-		# Gaussian derivative filters
-		# sigma = 2
-		# imx = np.zeros(im_gray.shape)
-		# filters.gaussian_filter(im_gray, (sigma, sigma), (0, 1), imx)
+		# gray_lap = cv2.Laplacian(gray, ddepth, ksize=kernel_size, scale=scale, delta=delta)
+		# dst = cv2.convertScaleAbs(gray_lap)
 
-		# imy = np.zeros(im_gray.shape)
-		# filters.gaussian_filter(im_gray, (sigma, sigma), (1, 0), imy)
+		# cv2.imshow('laplacian', im2)
+		# cv2.waitKey(0)
+		cv2.destroyAllWindows()
 
-		# magnitude = np.sqrt(imx**2+imy**2)
-
-
-		# img_hist(im)
-
-		# im2, cdf = histeq(im)
-		# img_hist(im2)
-		# find_object(im_gray)
-
-
-		# display_im(filename, [im_gray, im2, im3, im4], 2, 2)
-		# display_im(filename + 'der', [magnitude])
-		# display_im(filename + 'blur', [im, blur_color(im)])
-		# U, T = denoise(im_gray, im_gray)
-		# display_im(filename + 'noise', [im_gray, U])
 
 
 
